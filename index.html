@@ -4,80 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vivir Bien</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e392a">
-
-    <!-- Firebase SDK Compat v9 -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <!-- Iconos de FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Estilos CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body id="app-body">
 
-    <!-- Encabezado: vivir bien + admin (como en el dibujo 1) -->
-    <header class="navbar">
-        <h1 class="brand-title">vivir bien</h1>
-        <button id="btn-abrir-admin" class="btn-admin">admin</button>
+    <!-- ENCABEZADO -->
+    <header>
+        <h1>vivir bien</h1>
+        <button id="btn-login-admin">admin</button>
     </header>
 
-    <main class="container">
-        <!-- Foto editable por admin -->
-        <section class="banner-box">
-            <img id="main-banner" src="banner.jpg" alt="Foto editable por admin">
-        </section>
-
-        <!-- Link de página oficial -->
-        <section class="official-link-box">
-            <a id="official-link-btn" href="https://www.livegood.com/internationalWellnessPack#?enroller=Normaolgadu" target="_blank" class="btn-official">
-                linck de pagina oficial
+    <!-- BANNER Y TEXTO PRINCIPAL -->
+    <section class="hero-section">
+        <img src="https://via.placeholder.com/1000x250?text=Foto+editable+por+admin" alt="Banner Vivir Bien" id="display-banner-img">
+        <div class="hero-content">
+            <a href="https://www.livegood.com/internationalWellnessPack" target="_blank" class="official-link" id="display-official-link">
+                https://www.livegood.com/internationalWellnessPack
             </a>
-        </section>
+            <p id="display-vendor-text">ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial.</p>
+        </div>
+    </section>
 
-        <!-- Texto editable por vendedor -->
-        <section class="seller-text-box">
-            <p id="seller-text-display">Cargando información del vendedor...</p>
-        </section>
+    <!-- CONTENEDOR DINÁMICO DE PRODUCTOS -->
+    <section class="productos-container" id="grid-productos">
+        <!-- Se inyectan las publicaciones desde script.js -->
+    </section>
 
-        <!-- Productos del catálogo -->
-        <section class="catalog-grid" id="grid-productos">
-            <!-- Cargado desde app.js -->
-        </section>
-    </main>
-
-    <!-- Modal Admin -->
-    <div id="modal-admin" class="modal hidden">
+    <!-- MODAL CONFIGURACIÓN GENERAL DEL ADMIN -->
+    <div class="modal" id="modal-admin">
         <div class="modal-content">
-            <h3>Panel Admin - Vivir Bien</h3>
+            <h2>Panel Admin - Vivir Bien</h2>
+            
+            <label for="input-banner">URL Foto de Banner:</label>
+            <input type="text" id="input-banner" value="banner.jpg">
+            
+            <label for="input-link">Link de Página Oficial LiveGood:</label>
+            <input type="text" id="input-link" value="https://www.livegood.com/internationalWellnessPack">
+            
+            <label for="input-text">Texto editable por vendedor:</label>
+            <textarea id="input-text" rows="3">ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA.</textarea>
+            
+            <label for="input-wa">WhatsApp Consulta Vendedor (sin signo +):</label>
+            <input type="text" id="input-wa" value="5493725449776">
 
-            <label>URL Foto de Banner (o banner.jpg):</label>
-            <input type="text" id="input-banner-url">
-
-            <label>Link de Página Oficial LiveGood:</label>
-            <input type="text" id="input-official-url">
-
-            <label>Texto editable por vendedor:</label>
-            <textarea id="input-seller-text" rows="3"></textarea>
-
-            <label>WhatsApp Consulta Vendedor (sin signo +):</label>
-            <input type="text" id="input-seller-phone">
-
-            <label>Contraseña Admin:</label>
-            <input type="password" id="input-admin-pass" value="1234">
-
-            <div class="modal-buttons">
-                <button id="btn-guardar-admin" class="btn-save">Guardar en Firebase</button>
-                <button id="btn-cerrar-admin" class="btn-close">Cerrar</button>
+            <div class="admin-actions">
+                <button class="btn-cerrar" id="btn-cerrar-modal">Cerrar</button>
+                <button class="btn-guardar" id="btn-guardar-config">Guardar</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('Service Worker registrado correctamente.'))
-                .catch(err => console.log('Error al registrar SW:', err));
-        }
-    </script>
+    <!-- PANEL LATERAL: AGREGAR PRODUCTO -->
+    <div class="side-panel" id="panel-producto">
+        <button class="close-side-panel" id="btn-cerrar-panel">&times;</button>
+        <h2>Agregar Producto</h2>
+        <br>
+        <button class="btn-select-img">📸 Seleccionar foto</button>
+        <input type="text" id="nuevo-titulo" placeholder="Título de la publicación">
+        <button class="btn-whatsapp mt-10" id="btn-agregar-producto">Agregar Publicación</button>
+    </div>
+
+    <!-- Script JS -->
+    <script src="script.js"></script>
 </body>
 </html>
