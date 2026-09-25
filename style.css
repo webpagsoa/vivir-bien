@@ -1,288 +1,130 @@
-/* === ESTILOS GENERALES (Estética Profesional) === */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f6f8;
-    color: #333;
+let isAdmin = false;
+let whatsappGlobal = "5493725449776";
+
+// Base de datos de publicaciones dinámicas
+let publicaciones = [
+    { id: 1, title: "International Pack By LiveGood", img: "https://via.placeholder.com/300x250?text=Pack+1" },
+    { id: 2, title: "Super Redes y Verdes Orgánicos", img: "https://via.placeholder.com/300x250?text=Pack+2" }
+];
+
+// 1. Renderizar tarjetas de publicaciones
+function renderizarProductos() {
+    const grid = document.getElementById('grid-productos');
+    grid.innerHTML = '';
+
+    publicaciones.forEach(pub => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <img src="${pub.img}" alt="${pub.title}">
+            
+            <!-- Controles visibles únicamente si isAdmin es true -->
+            <div class="admin-controls">
+                <i class="fas fa-link" title="Copiar Link / Compartir" onclick="accionAdmin('compartir', ${pub.id})"></i>
+                <i class="fas fa-pencil-alt" title="Editar" onclick="accionAdmin('editar', ${pub.id})"></i>
+                <i class="fas fa-trash" title="Borrar" onclick="accionAdmin('borrar', ${pub.id})"></i>
+            </div>
+
+            <div class="card-info">
+                <p class="card-title">${pub.title}</p>
+                <button class="btn-whatsapp" onclick="abrirWhatsApp('${pub.title}')">
+                    <i class="fab fa-whatsapp"></i> whatsapp consulta vendedor
+                </button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
-/* === ENCABEZADO === */
-header {
-    background-color: #ffffff;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    position: relative;
+// 2. Conmutar Modo Admin
+document.getElementById('btn-login-admin').addEventListener('click', () => {
+    isAdmin = !isAdmin;
+    const body = document.getElementById('app-body');
+    
+    if (isAdmin) {
+        body.classList.add('admin-mode-active');
+        document.getElementById('btn-login-admin').innerText = "Salir Admin";
+        document.getElementById('modal-admin').style.display = 'flex';
+        document.getElementById('panel-producto').classList.add('open');
+    } else {
+        body.classList.remove('admin-mode-active');
+        document.getElementById('btn-login-admin').innerText = "admin";
+        document.getElementById('panel-producto').classList.remove('open');
+        document.getElementById('modal-admin').style.display = 'none';
+    }
+});
+
+// 3. Control de Modales y Configuración
+document.getElementById('btn-cerrar-modal').addEventListener('click', () => {
+    document.getElementById('modal-admin').style.display = 'none';
+});
+
+document.getElementById('btn-cerrar-panel').addEventListener('click', () => {
+    document.getElementById('panel-producto').classList.remove('open');
+});
+
+document.getElementById('btn-guardar-config').addEventListener('click', () => {
+    const linkInput = document.getElementById('input-link').value;
+    const linkDisplay = document.getElementById('display-official-link');
+    
+    linkDisplay.innerText = linkInput;
+    linkDisplay.href = linkInput;
+    
+    document.getElementById('display-vendor-text').innerText = document.getElementById('input-text').value;
+    whatsappGlobal = document.getElementById('input-wa').value;
+    
+    document.getElementById('modal-admin').style.display = 'none';
+    alert("Configuración guardada correctamente");
+});
+
+// 4. Operaciones de Productos (Agregar, Editar, Borrar, Compartir)
+document.getElementById('btn-agregar-producto').addEventListener('click', () => {
+    const inputTitulo = document.getElementById('nuevo-titulo');
+    const titulo = inputTitulo.value.trim();
+    
+    if (titulo) {
+        publicaciones.push({
+            id: Date.now(),
+            title: titulo,
+            img: "https://via.placeholder.com/300x250?text=Nuevo+Producto"
+        });
+        renderizarProductos();
+        inputTitulo.value = '';
+        alert("Publicación agregada correctamente");
+    } else {
+        alert("Por favor, ingresa un título para la publicación.");
+    }
+});
+
+function accionAdmin(accion, id) {
+    if (accion === 'borrar') {
+        if (confirm("¿Seguro que quieres borrar esta publicación?")) {
+            publicaciones = publicaciones.filter(p => p.id !== id);
+            renderizarProductos();
+        }
+    } else if (accion === 'editar') {
+        const pub = publicaciones.find(p => p.id === id);
+        if (pub) {
+            const nuevoTitulo = prompt("Editar título de la publicación:", pub.title);
+            if (nuevoTitulo !== null && nuevoTitulo.trim() !== "") {
+                pub.title = nuevoTitulo.trim();
+                renderizarProductos();
+            }
+        }
+    } else if (accion === 'compartir') {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Enlace de publicación copiado al portapapeles (ID: " + id + ")");
+        }).catch(() => {
+            alert("Enlace de publicación ID: " + id);
+        });
+    }
 }
 
-header h1 {
-    margin: 0;
-    font-size: 26px;
-    text-transform: capitalize;
-    color: #222;
-    letter-spacing: 0.5px;
+function abrirWhatsApp(producto) {
+    const msj = encodeURIComponent("Hola, quiero consultar sobre: " + producto);
+    window.open(`https://wa.me/${whatsappGlobal}?text=${msj}`, '_blank');
 }
 
-#btn-login-admin {
-    position: absolute;
-    right: 20px;
-    padding: 6px 16px;
-    background-color: transparent;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-#btn-login-admin:hover {
-    background-color: #f0f0f0;
-    border-color: #bbb;
-}
-
-/* === BANNER PRINCIPAL === */
-.hero-section {
-    max-width: 1000px;
-    margin: 24px auto;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    overflow: hidden;
-    text-align: center;
-    padding-bottom: 20px;
-}
-
-.hero-section img {
-    width: 100%;
-    height: 250px;
-    object-fit: cover;
-    background-color: #e2e8f0;
-}
-
-.hero-content {
-    padding: 20px 24px;
-}
-
-.official-link {
-    display: inline-block;
-    margin-bottom: 12px;
-    font-weight: 600;
-    color: #0056b3;
-    text-decoration: none;
-    word-break: break-all;
-    padding: 10px 16px;
-    border: 1px solid #cce5ff;
-    background-color: #e6f2ff;
-    border-radius: 6px;
-    transition: background-color 0.2s;
-}
-
-.official-link:hover {
-    background-color: #d8ebff;
-}
-
-/* === GRILLA DE PRODUCTOS (Estilo Alma Pura) === */
-.productos-container {
-    max-width: 1200px;
-    margin: 30px auto;
-    padding: 0 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px;
-}
-
-.card {
-    background-color: #ffffff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-    position: relative;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.1);
-}
-
-.card img {
-    width: 100%;
-    height: 240px;
-    object-fit: cover;
-    background-color: #f0f0f0;
-}
-
-/* Controles de Admin en la Tarjeta */
-.admin-controls {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 6px 12px;
-    border-radius: 20px;
-    display: none; /* Oculto por defecto para usuarios normales */
-    gap: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-.admin-mode-active .admin-controls {
-    display: flex; /* Muestra opciones de compartir, editar y borrar solo al admin */
-}
-
-.admin-controls i {
-    cursor: pointer;
-    color: #444;
-    font-size: 15px;
-    transition: color 0.2s;
-}
-
-.admin-controls i:hover {
-    color: #000;
-}
-
-.card-info {
-    padding: 16px;
-}
-
-.card-title {
-    font-weight: 600;
-    font-size: 16px;
-    margin: 0 0 14px 0;
-    color: #2c3e50;
-}
-
-.btn-whatsapp {
-    width: 100%;
-    padding: 12px;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    transition: background-color 0.2s;
-}
-
-.btn-whatsapp:hover {
-    background-color: #333333;
-}
-
-/* === PANELES Y MODALES DE ADMIN === */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: #ffffff;
-    padding: 24px;
-    border-radius: 10px;
-    width: 420px;
-    max-width: 90%;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-}
-
-.modal-content h2 {
-    margin-top: 0;
-    font-size: 20px;
-    color: #222;
-}
-
-.modal-content label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: #555;
-}
-
-.modal-content input, .modal-content textarea {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 16px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
-    font-family: inherit;
-}
-
-.admin-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.btn-guardar {
-    background: #194d33;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    cursor: pointer;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.btn-cerrar {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    cursor: pointer;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-/* Panel lateral Agregar Producto */
-.side-panel {
-    position: fixed;
-    right: -350px;
-    top: 0;
-    width: 320px;
-    height: 100%;
-    background: #ffffff;
-    box-shadow: -4px 0 15px rgba(0,0,0,0.1);
-    transition: right 0.3s ease;
-    padding: 24px;
-    z-index: 999;
-    box-sizing: border-box;
-}
-
-.side-panel.open {
-    right: 0;
-}
-
-.close-side-panel {
-    background: none;
-    border: none;
-    font-size: 24px;
-    float: right;
-    cursor: pointer;
-    color: #666;
-}
-
-.btn-select-img {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    cursor: pointer;
-    background-color: #f8f9fa;
-    border: 1px dashed #ccc;
-    border-radius: 6px;
-    font-weight: 500;
-}
-
-.mt-10 {
-    margin-top: 10px;
-}
+// Inicializar renderizado al cargar
+renderizarProductos();
