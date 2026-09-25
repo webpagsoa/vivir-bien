@@ -1,0 +1,21 @@
+{
+  "name": "Vivir Bien",
+  "short_name": "Vivir Bien",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1e392a",
+  "theme_color": "#1e392a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icono.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icono.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
