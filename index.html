@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vivir Bien</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e392a">
+
+    <!-- Firebase SDK Compat v9 -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <!-- Encabezado: vivir bien + admin (como en el dibujo 1) -->
+    <header class="navbar">
+        <h1 class="brand-title">vivir bien</h1>
+        <button id="btn-abrir-admin" class="btn-admin">admin</button>
+    </header>
+
+    <main class="container">
+        <!-- Foto editable por admin -->
+        <section class="banner-box">
+            <img id="main-banner" src="banner.jpg" alt="Foto editable por admin">
+        </section>
+
+        <!-- Link de página oficial -->
+        <section class="official-link-box">
+            <a id="official-link-btn" href="https://www.livegood.com/internationalWellnessPack#?enroller=Normaolgadu" target="_blank" class="btn-official">
+                linck de pagina oficial
+            </a>
+        </section>
+
+        <!-- Texto editable por vendedor -->
+        <section class="seller-text-box">
+            <p id="seller-text-display">Cargando información del vendedor...</p>
+        </section>
+
+        <!-- Productos del catálogo -->
+        <section class="catalog-grid" id="grid-productos">
+            <!-- Cargado desde app.js -->
+        </section>
+    </main>
+
+    <!-- Modal Admin -->
+    <div id="modal-admin" class="modal hidden">
+        <div class="modal-content">
+            <h3>Panel Admin - Vivir Bien</h3>
+
+            <label>URL Foto de Banner (o banner.jpg):</label>
+            <input type="text" id="input-banner-url">
+
+            <label>Link de Página Oficial LiveGood:</label>
+            <input type="text" id="input-official-url">
+
+            <label>Texto editable por vendedor:</label>
+            <textarea id="input-seller-text" rows="3"></textarea>
+
+            <label>WhatsApp Consulta Vendedor (sin signo +):</label>
+            <input type="text" id="input-seller-phone">
+
+            <label>Contraseña Admin:</label>
+            <input type="password" id="input-admin-pass" value="1234">
+
+            <div class="modal-buttons">
+                <button id="btn-guardar-admin" class="btn-save">Guardar en Firebase</button>
+                <button id="btn-cerrar-admin" class="btn-close">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker registrado correctamente.'))
+                .catch(err => console.log('Error al registrar SW:', err));
+        }
+    </script>
+</body>
+</html>
