@@ -1,43 +1,53 @@
 // Constante fija del teléfono (no editable desde la interfaz)
 const TELEFONO_WHATSAPP = "5493725449776";
 
-// Valores por defecto para configuración general
+// Valores iniciales
 const DEFAULT_CONFIG = {
     bannerUrl: "https://via.placeholder.com/1000x250?text=Banner+Vivir+Bien",
     officialLink: "https://www.livegood.com/internationalWellnessPack",
     vendorText: "ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial."
 };
 
-// Estado global
+// Estado de la aplicación
 let isAdmin = false;
 let config = JSON.parse(localStorage.getItem('vivirbien_config')) || DEFAULT_CONFIG;
-let productos = JSON.parse(localStorage.getItem('vivirbien_productos')) || []; // Inicia vacío
-let imagenTemporal = ""; // Para previsualizar imágenes subidas o pegadas
-let editandoId = null;   // ID de producto si se está editando
+let productos = JSON.parse(localStorage.getItem('vivirbien_productos')) || [];
 
-// Elementos del DOM
+// Variables temporales para fotos subidas
+let tempBannerBase64 = "";
+let tempProductoBase64 = "";
+let editandoId = null;
+
+// Elementos del DOM - Modal Admin
 const btnLoginAdmin = document.getElementById('btn-login-admin');
 const modalAdmin = document.getElementById('modal-admin');
 const btnCerrarModal = document.getElementById('btn-cerrar-modal');
 const btnGuardarConfig = document.getElementById('btn-guardar-config');
 
-const inputBanner = document.getElementById('input-banner');
+const inputBannerFile = document.getElementById('input-banner-file');
+const btnTriggerBannerFile = document.getElementById('btn-trigger-banner-file');
+const previewBannerContainer = document.getElementById('preview-banner-container');
+const previewBannerImg = document.getElementById('preview-banner-img');
+
 const inputLink = document.getElementById('input-link');
 const inputText = document.getElementById('input-text');
 
+// Elementos del DOM - Vista Principal
 const displayBannerImg = document.getElementById('display-banner-img');
 const displayOfficialLink = document.getElementById('display-official-link');
 const displayVendorText = document.getElementById('display-vendor-text');
 const gridProductos = document.getElementById('grid-productos');
 
+// Elementos del DOM - Panel Producto
 const panelProducto = document.getElementById('panel-producto');
 const btnCerrarPanel = document.getElementById('btn-cerrar-panel');
 const tituloPanelProducto = document.getElementById('titulo-panel-producto');
-const inputFotoFile = document.getElementById('input-foto-file');
-const btnTriggerFile = document.getElementById('btn-trigger-file');
-const nuevoImagenUrl = document.getElementById('nuevo-imagen-url');
-const previewContainer = document.getElementById('preview-container');
-const previewImg = document.getElementById('preview-img');
+
+const inputProductoFile = document.getElementById('input-producto-file');
+const btnTriggerProductoFile = document.getElementById('btn-trigger-producto-file');
+const previewProductoContainer = document.getElementById('preview-producto-container');
+const previewProductoImg = document.getElementById('preview-producto-img');
+
 const nuevoTitulo = document.getElementById('nuevo-titulo');
 const btnGuardarProducto = document.getElementById('btn-guardar-producto');
 
@@ -48,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
 });
 
-// Renderizar configuración del encabezado/banner
+// Renderizar la vista pública
 function renderConfig() {
     if (displayBannerImg) displayBannerImg.src = config.bannerUrl;
     if (displayOfficialLink) {
@@ -57,12 +67,16 @@ function renderConfig() {
     }
     if (displayVendorText) displayVendorText.textContent = config.vendorText;
 
-    if (inputBanner) inputBanner.value = config.bannerUrl;
     if (inputLink) inputLink.value = config.officialLink;
     if (inputText) inputText.value = config.vendorText;
+
+    if (config.bannerUrl && previewBannerImg) {
+        previewBannerImg.src = config.bannerUrl;
+        previewBannerContainer.style.display = 'block';
+    }
 }
 
-// Renderizar únicamente las publicaciones creadas
+// Renderizar únicamente productos existentes
 function renderProductos() {
     if (!gridProductos) return;
     gridProductos.innerHTML = '';
@@ -89,7 +103,7 @@ function renderProductos() {
                 <img src="${prod.imagen}" alt="${prod.titulo}" onerror="this.src='https://via.placeholder.com/300x240?text=Sin+Imagen'">
             </div>
             <div class="admin-controls">
-                <i class="fas fa-link" title="Copiar enlace / Compartir" onclick="compartirProducto('${prod.id}')"></i>
+                <i class="fas fa-link" title="Compartir publicación" onclick="compartirProducto('${prod.id}')"></i>
                 <i class="fas fa-pencil-alt" title="Editar" onclick="prepararEdicion('${prod.id}')"></i>
                 <i class="fas fa-trash" title="Eliminar" onclick="eliminarProducto('${prod.id}')"></i>
             </div>
@@ -104,15 +118,14 @@ function renderProductos() {
     });
 }
 
-// Guardar en LocalStorage
 function guardarDatos() {
     localStorage.setItem('vivirbien_config', JSON.stringify(config));
     localStorage.setItem('vivirbien_productos', JSON.stringify(productos));
 }
 
-// Event Listeners
+// Event Listeners principales
 function setupEventListeners() {
-    // Activar/Desactivar Admin
+    // Alternar modo Admin
     if (btnLoginAdmin) {
         btnLoginAdmin.addEventListener('click', () => {
             isAdmin = !isAdmin;
@@ -130,12 +143,35 @@ function setupEventListeners() {
         });
     }
 
-    // Modal Admin Configuración
+    // Modal Admin
     if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalAdmin);
 
+    // Selección de archivo para Banner
+    if (btnTriggerBannerFile) {
+        btnTriggerBannerFile.addEventListener('click', () => inputBannerFile.click());
+    }
+
+    if (inputBannerFile) {
+        inputBannerFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    tempBannerBase64 = event.target.result;
+                    previewBannerImg.src = tempBannerBase64;
+                    previewBannerContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Guardar Configuración General
     if (btnGuardarConfig) {
         btnGuardarConfig.addEventListener('click', () => {
-            config.bannerUrl = inputBanner.value.trim() || DEFAULT_CONFIG.bannerUrl;
+            if (tempBannerBase64) {
+                config.bannerUrl = tempBannerBase64;
+            }
             config.officialLink = inputLink.value.trim() || DEFAULT_CONFIG.officialLink;
             config.vendorText = inputText.value.trim() || DEFAULT_CONFIG.vendorText;
 
@@ -145,51 +181,36 @@ function setupEventListeners() {
         });
     }
 
-    // Panel Lateral
+    // Panel Lateral de Producto
     if (btnCerrarPanel) btnCerrarPanel.addEventListener('click', cerrarPanelProducto);
 
-    // Selección de archivo desde PC o Móvil
-    if (btnTriggerFile) {
-        btnTriggerFile.addEventListener('click', () => inputFotoFile.click());
+    // Selección de archivo para Producto
+    if (btnTriggerProductoFile) {
+        btnTriggerProductoFile.addEventListener('click', () => inputProductoFile.click());
     }
 
-    if (inputFotoFile) {
-        inputFotoFile.addEventListener('change', (e) => {
+    if (inputProductoFile) {
+        inputProductoFile.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    imagenTemporal = event.target.result;
-                    mostrarVistaPrevia(imagenTemporal);
-                    if (nuevoImagenUrl) nuevoImagenUrl.value = '';
+                    tempProductoBase64 = event.target.result;
+                    previewProductoImg.src = tempProductoBase64;
+                    previewProductoContainer.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
             }
         });
     }
 
-    // Pegar URL directa de foto
-    if (nuevoImagenUrl) {
-        nuevoImagenUrl.addEventListener('input', () => {
-            const url = nuevoImagenUrl.value.trim();
-            if (url) {
-                imagenTemporal = url;
-                mostrarVistaPrevia(url);
-            } else if (!inputFotoFile.files.length) {
-                ocultarVistaPrevia();
-            }
-        });
-    }
-
-    // Publicar o Guardar Cambios del Producto
+    // Publicar o Editar Producto
     if (btnGuardarProducto) {
         btnGuardarProducto.addEventListener('click', () => {
             const titulo = nuevoTitulo.value.trim();
-            const urlManual = nuevoImagenUrl ? nuevoImagenUrl.value.trim() : '';
-            const imagenFinal = imagenTemporal || urlManual;
 
-            if (!imagenFinal) {
-                alert('Por favor, selecciona una foto de tu dispositivo o pega un enlace de imagen.');
+            if (!tempProductoBase64 && !editandoId) {
+                alert('Por favor, selecciona una foto desde tu dispositivo.');
                 return;
             }
 
@@ -199,18 +220,18 @@ function setupEventListeners() {
             }
 
             if (editandoId) {
-                // Editar existente
                 const idx = productos.findIndex(p => p.id === editandoId);
                 if (idx !== -1) {
                     productos[idx].titulo = titulo;
-                    productos[idx].imagen = imagenFinal;
+                    if (tempProductoBase64) {
+                        productos[idx].imagen = tempProductoBase64;
+                    }
                 }
             } else {
-                // Crear nueva publicación
                 const nuevoProd = {
                     id: Date.now().toString(),
                     titulo: titulo,
-                    imagen: imagenFinal
+                    imagen: tempProductoBase64
                 };
                 productos.push(nuevoProd);
             }
@@ -222,52 +243,52 @@ function setupEventListeners() {
     }
 }
 
-// Vista previa
-function mostrarVistaPrevia(src) {
-    if (previewImg && previewContainer) {
-        previewImg.src = src;
-        previewContainer.style.display = 'block';
-    }
+// Manejo de Paneles y Modales
+function abrirModalAdmin() {
+    tempBannerBase64 = "";
+    if (modalAdmin) modalAdmin.style.display = 'flex';
 }
 
-function ocultarVistaPrevia() {
-    if (previewImg && previewContainer) {
-        previewImg.src = '';
-        previewContainer.style.display = 'none';
-    }
-    imagenTemporal = "";
+function cerrarModalAdmin() {
+    if (modalAdmin) modalAdmin.style.display = 'none';
 }
 
-// Preparar panel para una nueva publicación
 function abrirPanelNuevoProducto() {
     editandoId = null;
+    tempProductoBase64 = "";
     if (tituloPanelProducto) tituloPanelProducto.textContent = "Nueva Publicación";
     if (btnGuardarProducto) btnGuardarProducto.textContent = "Publicar Producto";
     if (nuevoTitulo) nuevoTitulo.value = "";
-    if (nuevoImagenUrl) nuevoImagenUrl.value = "";
-    if (inputFotoFile) inputFotoFile.value = "";
-    ocultarVistaPrevia();
+    if (inputProductoFile) inputProductoFile.value = "";
+    if (previewProductoContainer) previewProductoContainer.style.display = 'none';
     if (panelProducto) panelProducto.classList.add('open');
 }
 
-// Preparar edición de un producto
+function cerrarPanelProducto() {
+    if (panelProducto) panelProducto.classList.remove('open');
+    tempProductoBase64 = "";
+    editandoId = null;
+}
+
+// Funciones globales de tarjeta
 window.prepararEdicion = function(id) {
     const prod = productos.find(p => p.id === id);
     if (!prod) return;
 
     editandoId = id;
+    tempProductoBase64 = prod.imagen;
     if (tituloPanelProducto) tituloPanelProducto.textContent = "Editar Publicación";
     if (btnGuardarProducto) btnGuardarProducto.textContent = "Guardar Cambios";
     if (nuevoTitulo) nuevoTitulo.value = prod.titulo;
-    if (nuevoImagenUrl) nuevoImagenUrl.value = prod.imagen.startsWith('data:') ? '' : prod.imagen;
     
-    imagenTemporal = prod.imagen;
-    mostrarVistaPrevia(prod.imagen);
+    if (previewProductoImg && previewProductoContainer) {
+        previewProductoImg.src = prod.imagen;
+        previewProductoContainer.style.display = 'block';
+    }
 
     if (panelProducto) panelProducto.classList.add('open');
 };
 
-// Eliminar producto
 window.eliminarProducto = function(id) {
     if (confirm('¿Estás seguro de que deseas eliminar esta publicación?')) {
         productos = productos.filter(p => p.id !== id);
@@ -276,12 +297,11 @@ window.eliminarProducto = function(id) {
     }
 };
 
-// Compartir (Solo disponible si es admin)
 window.compartirProducto = function(id) {
     const prod = productos.find(p => p.id === id);
     if (!prod) return;
 
-    const textoCompartir = `Miren esta publicación de Vivir Bien: *${prod.titulo}*`;
+    const textoCompartir = `Consulta sobre: *${prod.titulo}*`;
     const urlPublicacion = window.location.href.split('#')[0] + '#' + id;
 
     if (navigator.share) {
@@ -293,22 +313,6 @@ window.compartirProducto = function(id) {
     } else {
         navigator.clipboard.writeText(`${textoCompartir}\n${urlPublicacion}`).then(() => {
             alert('¡Enlace e información copiada al portapapeles!');
-        }).catch(() => {
-            alert(`Publicación: ${prod.titulo}\nEnlace: ${urlPublicacion}`);
         });
     }
 };
-
-function abrirModalAdmin() {
-    if (modalAdmin) modalAdmin.style.display = 'flex';
-}
-
-function cerrarModalAdmin() {
-    if (modalAdmin) modalAdmin.style.display = 'none';
-}
-
-function cerrarPanelProducto() {
-    if (panelProducto) panelProducto.classList.remove('open');
-    ocultarVistaPrevia();
-    editandoId = null;
-}
