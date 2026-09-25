@@ -232,11 +232,9 @@
             background: #ffffff;
             padding: 24px;
             border-radius: 10px;
-            width: 440px;
+            width: 420px;
             max-width: 90%;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .modal-content h2 {
@@ -253,7 +251,7 @@
             color: #555;
         }
 
-        .modal-content input[type="text"], .modal-content textarea {
+        .modal-content textarea {
             width: 100%;
             padding: 10px;
             margin-bottom: 16px;
@@ -266,7 +264,6 @@
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 10px;
         }
 
         .btn-guardar {
@@ -385,7 +382,7 @@
 
     <!-- BANNER Y TEXTO PRINCIPAL -->
     <section class="hero-section">
-        <img src="https://via.placeholder.com/1000x250?text=Banner+Vivir+Bien" alt="Banner Vivir Bien" id="display-banner-img">
+        <img src="banner.jpg" alt="Banner Vivir Bien" id="display-banner-img">
         <div class="hero-content">
             <a href="https://www.livegood.com/internationalWellnessPack" target="_blank" class="official-link" id="display-official-link">
                 https://www.livegood.com/internationalWellnessPack
@@ -398,26 +395,13 @@
     <section class="productos-container" id="grid-productos">
     </section>
 
-    <!-- MODAL CONFIGURACIÓN GENERAL DEL ADMIN -->
+    <!-- MODAL CONFIGURACIÓN GENERAL DEL ADMIN (Solo edición de texto) -->
     <div class="modal" id="modal-admin">
         <div class="modal-content">
             <h2>Panel Admin - Vivir Bien</h2>
             
-            <label>Foto de Banner:</label>
-            <input type="file" id="input-banner-file" accept="image/*" style="display: none;">
-            <button type="button" class="btn-select-img" id="btn-trigger-banner-file">
-                <i class="fas fa-camera"></i> Subir Foto de Banner desde Celular/PC
-            </button>
-
-            <div class="preview-container" id="preview-banner-container">
-                <img id="preview-banner-img" src="" alt="Vista Previa Banner">
-            </div>
-
-            <label for="input-link">Link de Página Oficial LiveGood:</label>
-            <input type="text" id="input-link" placeholder="https://www.livegood.com/...">
-            
             <label for="input-text">Texto editable por vendedor:</label>
-            <textarea id="input-text" rows="3" placeholder="Texto descriptivo principal"></textarea>
+            <textarea id="input-text" rows="4" placeholder="Texto descriptivo principal"></textarea>
 
             <div class="admin-actions">
                 <button class="btn-cerrar" id="btn-cerrar-modal">Cerrar</button>
@@ -432,18 +416,16 @@
         <h2 id="titulo-panel-producto">Nueva Publicación</h2>
         <br>
 
-        <label>Foto del Producto:</label>
         <input type="file" id="input-producto-file" accept="image/*" style="display: none;">
         <button type="button" class="btn-select-img" id="btn-trigger-producto-file">
-            <i class="fas fa-image"></i> Seleccionar foto de galería
+            📸 Cargar foto desde dispositivo
         </button>
         
         <div class="preview-container" id="preview-producto-container">
             <img id="preview-producto-img" src="" alt="Vista previa producto">
         </div>
 
-        <label for="nuevo-titulo">Título de la publicación:</label>
-        <input type="text" id="nuevo-titulo" placeholder="Ej: Super Redes Orgánicos">
+        <input type="text" id="nuevo-titulo" placeholder="Título de la publicación">
         
         <button class="btn-whatsapp mt-10" id="btn-guardar-producto">Publicar Producto</button>
     </div>
