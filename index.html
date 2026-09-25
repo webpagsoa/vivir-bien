@@ -232,9 +232,11 @@
             background: #ffffff;
             padding: 24px;
             border-radius: 10px;
-            width: 420px;
+            width: 440px;
             max-width: 90%;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-content h2 {
@@ -247,11 +249,11 @@
             display: block;
             font-size: 14px;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             color: #555;
         }
 
-        .modal-content input, .modal-content textarea {
+        .modal-content input[type="text"], .modal-content textarea {
             width: 100%;
             padding: 10px;
             margin-bottom: 16px;
@@ -264,6 +266,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 10px;
+            margin-top: 10px;
         }
 
         .btn-guardar {
@@ -339,6 +342,10 @@
             border-radius: 6px;
             font-weight: 600;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-select-img:hover {
@@ -354,6 +361,7 @@
             display: none;
             border: 1px solid #ddd;
             text-align: center;
+            background: #f9f9f9;
         }
 
         .preview-container img {
@@ -395,14 +403,21 @@
         <div class="modal-content">
             <h2>Panel Admin - Vivir Bien</h2>
             
-            <label for="input-banner">URL Foto de Banner:</label>
-            <input type="text" id="input-banner" placeholder="Pega la URL de la foto de banner">
-            
+            <label>Foto de Banner:</label>
+            <input type="file" id="input-banner-file" accept="image/*" style="display: none;">
+            <button type="button" class="btn-select-img" id="btn-trigger-banner-file">
+                <i class="fas fa-camera"></i> Subir Foto de Banner desde Celular/PC
+            </button>
+
+            <div class="preview-container" id="preview-banner-container">
+                <img id="preview-banner-img" src="" alt="Vista Previa Banner">
+            </div>
+
             <label for="input-link">Link de Página Oficial LiveGood:</label>
-            <input type="text" id="input-link" placeholder="Ej: https://www.livegood.com/...">
+            <input type="text" id="input-link" placeholder="https://www.livegood.com/...">
             
             <label for="input-text">Texto editable por vendedor:</label>
-            <textarea id="input-text" rows="3" placeholder="Escribe la descripción o texto promocional"></textarea>
+            <textarea id="input-text" rows="3" placeholder="Texto descriptivo principal"></textarea>
 
             <div class="admin-actions">
                 <button class="btn-cerrar" id="btn-cerrar-modal">Cerrar</button>
@@ -416,16 +431,19 @@
         <button class="close-side-panel" id="btn-cerrar-panel">&times;</button>
         <h2 id="titulo-panel-producto">Nueva Publicación</h2>
         <br>
-        <input type="file" id="input-foto-file" accept="image/*" style="display: none;">
-        <button type="button" class="btn-select-img" id="btn-trigger-file">📸 Cargar foto desde dispositivo</button>
+
+        <label>Foto del Producto:</label>
+        <input type="file" id="input-producto-file" accept="image/*" style="display: none;">
+        <button type="button" class="btn-select-img" id="btn-trigger-producto-file">
+            <i class="fas fa-image"></i> Seleccionar foto de galería
+        </button>
         
-        <input type="text" id="nuevo-imagen-url" placeholder="O pega la URL/enlace de la foto">
-        
-        <div class="preview-container" id="preview-container">
-            <img id="preview-img" src="" alt="Vista previa">
+        <div class="preview-container" id="preview-producto-container">
+            <img id="preview-producto-img" src="" alt="Vista previa producto">
         </div>
 
-        <input type="text" id="nuevo-titulo" placeholder="Título de la publicación">
+        <label for="nuevo-titulo">Título de la publicación:</label>
+        <input type="text" id="nuevo-titulo" placeholder="Ej: Super Redes Orgánicos">
         
         <button class="btn-whatsapp mt-10" id="btn-guardar-producto">Publicar Producto</button>
     </div>
