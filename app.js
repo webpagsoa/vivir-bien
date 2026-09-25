@@ -1,20 +1,17 @@
 // Constante fija del teléfono (no editable desde la interfaz)
 const TELEFONO_WHATSAPP = "5493725449776";
 
-// Valores iniciales
-const DEFAULT_CONFIG = {
-    bannerUrl: "https://via.placeholder.com/1000x250?text=Banner+Vivir+Bien",
-    officialLink: "https://www.livegood.com/internationalWellnessPack",
-    vendorText: "ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial."
-};
+// Configuración fija del sitio
+const BANNER_URL_FIJA = "banner.jpg";
+const LINK_OFICIAL_FIJO = "https://www.livegood.com/internationalWellnessPack";
+const DEFAULT_VENDOR_TEXT = "ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial.";
 
 // Estado de la aplicación
 let isAdmin = false;
-let config = JSON.parse(localStorage.getItem('vivirbien_config')) || DEFAULT_CONFIG;
+let vendorText = localStorage.getItem('vivirbien_vendorText') || DEFAULT_VENDOR_TEXT;
 let productos = JSON.parse(localStorage.getItem('vivirbien_productos')) || [];
 
-// Variables temporales para fotos subidas
-let tempBannerBase64 = "";
+// Variables temporales
 let tempProductoBase64 = "";
 let editandoId = null;
 
@@ -23,13 +20,6 @@ const btnLoginAdmin = document.getElementById('btn-login-admin');
 const modalAdmin = document.getElementById('modal-admin');
 const btnCerrarModal = document.getElementById('btn-cerrar-modal');
 const btnGuardarConfig = document.getElementById('btn-guardar-config');
-
-const inputBannerFile = document.getElementById('input-banner-file');
-const btnTriggerBannerFile = document.getElementById('btn-trigger-banner-file');
-const previewBannerContainer = document.getElementById('preview-banner-container');
-const previewBannerImg = document.getElementById('preview-banner-img');
-
-const inputLink = document.getElementById('input-link');
 const inputText = document.getElementById('input-text');
 
 // Elementos del DOM - Vista Principal
@@ -60,20 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Renderizar la vista pública
 function renderConfig() {
-    if (displayBannerImg) displayBannerImg.src = config.bannerUrl;
+    if (displayBannerImg) displayBannerImg.src = BANNER_URL_FIJA;
     if (displayOfficialLink) {
-        displayOfficialLink.href = config.officialLink;
-        displayOfficialLink.textContent = config.officialLink;
+        displayOfficialLink.href = LINK_OFICIAL_FIJO;
+        displayOfficialLink.textContent = LINK_OFICIAL_FIJO;
     }
-    if (displayVendorText) displayVendorText.textContent = config.vendorText;
+    if (displayVendorText) displayVendorText.textContent = vendorText;
 
-    if (inputLink) inputLink.value = config.officialLink;
-    if (inputText) inputText.value = config.vendorText;
-
-    if (config.bannerUrl && previewBannerImg) {
-        previewBannerImg.src = config.bannerUrl;
-        previewBannerContainer.style.display = 'block';
-    }
+    if (inputText) inputText.value = vendorText;
 }
 
 // Renderizar únicamente productos existentes
@@ -119,7 +103,7 @@ function renderProductos() {
 }
 
 function guardarDatos() {
-    localStorage.setItem('vivirbien_config', JSON.stringify(config));
+    localStorage.setItem('vivirbien_vendorText', vendorText);
     localStorage.setItem('vivirbien_productos', JSON.stringify(productos));
 }
 
@@ -146,35 +130,10 @@ function setupEventListeners() {
     // Modal Admin
     if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalAdmin);
 
-    // Selección de archivo para Banner
-    if (btnTriggerBannerFile) {
-        btnTriggerBannerFile.addEventListener('click', () => inputBannerFile.click());
-    }
-
-    if (inputBannerFile) {
-        inputBannerFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    tempBannerBase64 = event.target.result;
-                    previewBannerImg.src = tempBannerBase64;
-                    previewBannerContainer.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-
-    // Guardar Configuración General
+    // Guardar Configuración General (Solo el texto editable)
     if (btnGuardarConfig) {
         btnGuardarConfig.addEventListener('click', () => {
-            if (tempBannerBase64) {
-                config.bannerUrl = tempBannerBase64;
-            }
-            config.officialLink = inputLink.value.trim() || DEFAULT_CONFIG.officialLink;
-            config.vendorText = inputText.value.trim() || DEFAULT_CONFIG.vendorText;
-
+            vendorText = inputText.value.trim() || DEFAULT_VENDOR_TEXT;
             guardarDatos();
             renderConfig();
             cerrarModalAdmin();
@@ -184,7 +143,7 @@ function setupEventListeners() {
     // Panel Lateral de Producto
     if (btnCerrarPanel) btnCerrarPanel.addEventListener('click', cerrarPanelProducto);
 
-    // Selección de archivo para Producto
+    // Selección de archivo para Producto desde el dispositivo
     if (btnTriggerProductoFile) {
         btnTriggerProductoFile.addEventListener('click', () => inputProductoFile.click());
     }
@@ -245,7 +204,6 @@ function setupEventListeners() {
 
 // Manejo de Paneles y Modales
 function abrirModalAdmin() {
-    tempBannerBase64 = "";
     if (modalAdmin) modalAdmin.style.display = 'flex';
 }
 
