@@ -1,152 +1,211 @@
-document.addEventListener('DOMContentLoaded', () => {
-    let isAdmin = false;
-    let whatsappGlobal = "5493725449776";
+// Constante fija del teléfono (no editable desde la interfaz)
+const TELEFONO_WHATSAPP = "5493725449776";
 
-    // Publicaciones iniciales de ejemplo
-    let publicaciones = [
-        { id: 1, title: "International Pack By LiveGood", img: "https://via.placeholder.com/300x250?text=Pack+1" },
-        { id: 2, title: "Super Redes y Verdes Orgánicos", img: "https://via.placeholder.com/300x250?text=Pack+2" }
-    ];
+// Valores por defecto
+const DEFAULT_CONFIG = {
+    bannerUrl: "banner.jpg",
+    officialLink: "https://www.livegood.com/internationalWellnessPack",
+    vendorText: "ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial."
+};
 
-    // Renderizar publicaciones
-    function renderizarProductos() {
-        const grid = document.getElementById('grid-productos');
-        if (!grid) return;
-        
-        grid.innerHTML = '';
-
-        publicaciones.forEach(pub => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <img src="${pub.img}" alt="${pub.title}">
-                
-                <div class="admin-controls">
-                    <i class="fas fa-link" title="Copiar Link" onclick="accionAdmin('compartir', ${pub.id})"></i>
-                    <i class="fas fa-pencil-alt" title="Editar" onclick="accionAdmin('editar', ${pub.id})"></i>
-                    <i class="fas fa-trash" title="Borrar" onclick="accionAdmin('borrar', ${pub.id})"></i>
-                </div>
-
-                <div class="card-info">
-                    <p class="card-title">${pub.title}</p>
-                    <button class="btn-whatsapp" onclick="abrirWhatsApp('${pub.title}')">
-                        <i class="fab fa-whatsapp"></i> whatsapp consulta vendedor
-                    </button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
+const DEFAULT_PRODUCTOS = [
+    {
+        id: "1",
+        titulo: "International Pack By LiveGood",
+        imagen: "https://via.placeholder.com/300x240?text=International+Pack"
+    },
+    {
+        id: "2",
+        titulo: "Super Redes y Verdes Orgánicos",
+        imagen: "https://via.placeholder.com/300x240?text=Super+Redes+y+Verdes"
     }
+];
 
-    // Botón de alternar Admin
-    const btnAdmin = document.getElementById('btn-login-admin');
-    if (btnAdmin) {
-        btnAdmin.addEventListener('click', () => {
+// Estado global de la aplicación
+let isAdmin = false;
+let config = JSON.parse(localStorage.getItem('vivirbien_config')) || DEFAULT_CONFIG;
+let productos = JSON.parse(localStorage.getItem('vivirbien_productos')) || DEFAULT_PRODUCTOS;
+
+// Elementos del DOM
+const btnLoginAdmin = document.getElementById('btn-login-admin');
+const modalAdmin = document.getElementById('modal-admin');
+const btnCerrarModal = document.getElementById('btn-cerrar-modal');
+const btnGuardarConfig = document.getElementById('btn-guardar-config');
+
+const inputBanner = document.getElementById('input-banner');
+const inputLink = document.getElementById('input-link');
+const inputText = document.getElementById('input-text');
+
+const displayBannerImg = document.getElementById('display-banner-img');
+const displayOfficialLink = document.getElementById('display-official-link');
+const displayVendorText = document.getElementById('display-vendor-text');
+const gridProductos = document.getElementById('grid-productos');
+
+const panelProducto = document.getElementById('panel-producto');
+const btnCerrarPanel = document.getElementById('btn-cerrar-panel');
+const nuevoTitulo = document.getElementById('nuevo-titulo');
+const btnAgregarProducto = document.getElementById('btn-agregar-producto');
+
+// Inicialización de la app
+document.addEventListener('DOMContentLoaded', () => {
+    renderConfig();
+    renderProductos();
+    setupEventListeners();
+});
+
+// Renderizar la configuración visual (Banner, Enlace oficial y Texto)
+function renderConfig() {
+    if (displayBannerImg) displayBannerImg.src = config.bannerUrl;
+    if (displayOfficialLink) {
+        displayOfficialLink.href = config.officialLink;
+        displayOfficialLink.textContent = config.officialLink;
+    }
+    if (displayVendorText) displayVendorText.textContent = config.vendorText;
+
+    // Cargar datos actuales en los campos del Modal
+    if (inputBanner) inputBanner.value = config.bannerUrl;
+    if (inputLink) inputLink.value = config.officialLink;
+    if (inputText) inputText.value = config.vendorText;
+}
+
+// Renderizar las tarjetas de productos
+function renderProductos() {
+    if (!gridProductos) return;
+    gridProductos.innerHTML = '';
+
+    productos.forEach(prod => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        // Construcción del mensaje para WhatsApp con el número fijo
+        const mensajeWA = encodeURIComponent(`Hola, quisiera más información sobre: ${prod.titulo}`);
+        const urlWA = `https://wa.me/${TELEFONO_WHATSAPP}?text=${mensajeWA}`;
+
+        card.innerHTML = `
+            <img src="${prod.imagen}" alt="${prod.titulo}">
+            <div class="admin-controls">
+                <i class="fas fa-link" title="Copiar enlace" onclick="copiarEnlace('${prod.id}')"></i>
+                <i class="fas fa-pencil-alt" title="Editar" onclick="editarProducto('${prod.id}')"></i>
+                <i class="fas fa-trash" title="Eliminar" onclick="eliminarProducto('${prod.id}')"></i>
+            </div>
+            <div class="card-info">
+                <h3 class="card-title">${prod.titulo}</h3>
+                <a href="${urlWA}" target="_blank" class="btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> whatsapp consulta vendedor
+                </a>
+            </div>
+        `;
+        gridProductos.appendChild(card);
+    });
+}
+
+// Guardar los datos en LocalStorage
+function guardarDatos() {
+    localStorage.setItem('vivirbien_config', JSON.stringify(config));
+    localStorage.setItem('vivirbien_productos', JSON.stringify(productos));
+}
+
+// Event Listeners principales
+function setupEventListeners() {
+    // Botón de Admin
+    if (btnLoginAdmin) {
+        btnLoginAdmin.addEventListener('click', () => {
             isAdmin = !isAdmin;
-            const body = document.getElementById('app-body');
-            
+            document.body.classList.toggle('admin-mode-active', isAdmin);
+
             if (isAdmin) {
-                body.classList.add('admin-mode-active');
-                btnAdmin.innerText = "Salir Admin";
-                document.getElementById('modal-admin').style.display = 'flex';
-                document.getElementById('panel-producto').classList.add('open');
+                btnLoginAdmin.textContent = 'Salir Admin';
+                abrirModalAdmin();
             } else {
-                body.classList.remove('admin-mode-active');
-                btnAdmin.innerText = "admin";
-                document.getElementById('panel-producto').classList.remove('open');
-                document.getElementById('modal-admin').style.display = 'none';
+                btnLoginAdmin.textContent = 'admin';
+                cerrarModalAdmin();
+                cerrarPanelProducto();
             }
         });
     }
 
-    // Botones para cerrar modal y panel
-    const btnCerrarModal = document.getElementById('btn-cerrar-modal');
-    if (btnCerrarModal) {
-        btnCerrarModal.addEventListener('click', () => {
-            document.getElementById('modal-admin').style.display = 'none';
-        });
-    }
+    // Modal de Configuración
+    if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalAdmin);
 
-    const btnCerrarPanel = document.getElementById('btn-cerrar-panel');
-    if (btnCerrarPanel) {
-        btnCerrarPanel.addEventListener('click', () => {
-            document.getElementById('panel-producto').classList.remove('open');
-        });
-    }
-
-    // Guardar configuración vendedor
-    const btnGuardarConfig = document.getElementById('btn-guardar-config');
     if (btnGuardarConfig) {
         btnGuardarConfig.addEventListener('click', () => {
-            const linkInput = document.getElementById('input-link').value;
-            const linkDisplay = document.getElementById('display-official-link');
-            
-            if (linkDisplay) {
-                linkDisplay.innerText = linkInput;
-                linkDisplay.href = linkInput;
-            }
-            
-            document.getElementById('display-vendor-text').innerText = document.getElementById('input-text').value;
-            whatsappGlobal = document.getElementById('input-wa').value;
-            
-            document.getElementById('modal-admin').style.display = 'none';
-            alert("Configuración guardada correctamente");
+            config.bannerUrl = inputBanner.value.trim() || DEFAULT_CONFIG.bannerUrl;
+            config.officialLink = inputLink.value.trim() || DEFAULT_CONFIG.officialLink;
+            config.vendorText = inputText.value.trim() || DEFAULT_CONFIG.vendorText;
+
+            guardarDatos();
+            renderConfig();
+            cerrarModalAdmin();
         });
     }
 
-    // Agregar producto
-    const btnAgregarProducto = document.getElementById('btn-agregar-producto');
+    // Panel Lateral para Agregar Producto
+    if (btnCerrarPanel) btnCerrarPanel.addEventListener('click', cerrarPanelProducto);
+
     if (btnAgregarProducto) {
         btnAgregarProducto.addEventListener('click', () => {
-            const inputTitulo = document.getElementById('nuevo-titulo');
-            const titulo = inputTitulo.value.trim();
-            
-            if (titulo) {
-                publicaciones.push({
-                    id: Date.now(),
-                    title: titulo,
-                    img: "https://via.placeholder.com/300x250?text=Nuevo+Producto"
-                });
-                renderizarProductos();
-                inputTitulo.value = '';
-                alert("Publicación agregada correctamente");
-            } else {
-                alert("Ingresa un título para la publicación.");
+            const titulo = nuevoTitulo.value.trim();
+            if (!titulo) {
+                alert('Por favor, ingresa un título para la publicación.');
+                return;
             }
+
+            const nuevoProd = {
+                id: Date.now().toString(),
+                titulo: titulo,
+                imagen: 'https://via.placeholder.com/300x240?text=' + encodeURIComponent(titulo)
+            };
+
+            productos.push(nuevoProd);
+            guardarDatos();
+            renderProductos();
+
+            nuevoTitulo.value = '';
+            cerrarPanelProducto();
         });
     }
+}
 
-    // Funciones globales
-    window.accionAdmin = function(accion, id) {
-        if (accion === 'borrar') {
-            if (confirm("¿Deseas eliminar esta publicación?")) {
-                publicaciones = publicaciones.filter(p => p.id !== id);
-                renderizarProductos();
-            }
-        } else if (accion === 'editar') {
-            const pub = publicaciones.find(p => p.id === id);
-            if (pub) {
-                const nuevoTitulo = prompt("Editar título:", pub.title);
-                if (nuevoTitulo && nuevoTitulo.trim() !== "") {
-                    pub.title = nuevoTitulo.trim();
-                    renderizarProductos();
-                }
-            }
-        } else if (accion === 'compartir') {
-            const url = window.location.href;
-            navigator.clipboard.writeText(url).then(() => {
-                alert("Enlace copiado al portapapeles.");
-            }).catch(() => {
-                alert("Enlace: " + url);
-            });
-        }
-    };
+// Funciones para abrir y cerrar paneles/modales
+function abrirModalAdmin() {
+    if (modalAdmin) modalAdmin.style.display = 'flex';
+}
 
-    window.abrirWhatsApp = function(producto) {
-        const msj = encodeURIComponent("Hola, quiero consultar sobre: " + producto);
-        window.open(`https://wa.me/${whatsappGlobal}?text=${msj}`, '_blank');
-    };
+function cerrarModalAdmin() {
+    if (modalAdmin) modalAdmin.style.display = 'none';
+}
 
-    // Carga inicial
-    renderizarProductos();
-});
+function cerrarPanelProducto() {
+    if (panelProducto) panelProducto.classList.remove('open');
+}
+
+// Funciones globales invocadas desde las tarjetas
+window.eliminarProducto = function(id) {
+    if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+        productos = productos.filter(p => p.id !== id);
+        guardarDatos();
+        renderProductos();
+    }
+};
+
+window.editarProducto = function(id) {
+    const prod = productos.find(p => p.id === id);
+    if (!prod) return;
+
+    const nuevoNombre = prompt('Editar título del producto:', prod.titulo);
+    if (nuevoNombre !== null && nuevoNombre.trim() !== '') {
+        prod.titulo = nuevoNombre.trim();
+        guardarDatos();
+        renderProductos();
+    }
+};
+
+window.copiarEnlace = function(id) {
+    const prod = productos.find(p => p.id === id);
+    if (prod) {
+        const url = window.location.href.split('#')[0] + '#' + id;
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Enlace copiado al portapapeles');
+        });
+    }
+};
