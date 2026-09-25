@@ -1,30 +1,19 @@
 // Constante fija del teléfono (no editable desde la interfaz)
 const TELEFONO_WHATSAPP = "5493725449776";
 
-// Valores por defecto
+// Valores por defecto para configuración general
 const DEFAULT_CONFIG = {
-    bannerUrl: "banner.jpg",
+    bannerUrl: "https://via.placeholder.com/1000x250?text=Banner+Vivir+Bien",
     officialLink: "https://www.livegood.com/internationalWellnessPack",
     vendorText: "ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial."
 };
 
-const DEFAULT_PRODUCTOS = [
-    {
-        id: "1",
-        titulo: "International Pack By LiveGood",
-        imagen: "https://via.placeholder.com/300x240?text=International+Pack"
-    },
-    {
-        id: "2",
-        titulo: "Super Redes y Verdes Orgánicos",
-        imagen: "https://via.placeholder.com/300x240?text=Super+Redes+y+Verdes"
-    }
-];
-
-// Estado global de la aplicación
+// Estado global
 let isAdmin = false;
 let config = JSON.parse(localStorage.getItem('vivirbien_config')) || DEFAULT_CONFIG;
-let productos = JSON.parse(localStorage.getItem('vivirbien_productos')) || DEFAULT_PRODUCTOS;
+let productos = JSON.parse(localStorage.getItem('vivirbien_productos')) || []; // Inicia vacío
+let imagenTemporal = ""; // Para previsualizar imágenes subidas o pegadas
+let editandoId = null;   // ID de producto si se está editando
 
 // Elementos del DOM
 const btnLoginAdmin = document.getElementById('btn-login-admin');
@@ -43,17 +32,23 @@ const gridProductos = document.getElementById('grid-productos');
 
 const panelProducto = document.getElementById('panel-producto');
 const btnCerrarPanel = document.getElementById('btn-cerrar-panel');
+const tituloPanelProducto = document.getElementById('titulo-panel-producto');
+const inputFotoFile = document.getElementById('input-foto-file');
+const btnTriggerFile = document.getElementById('btn-trigger-file');
+const nuevoImagenUrl = document.getElementById('nuevo-imagen-url');
+const previewContainer = document.getElementById('preview-container');
+const previewImg = document.getElementById('preview-img');
 const nuevoTitulo = document.getElementById('nuevo-titulo');
-const btnAgregarProducto = document.getElementById('btn-agregar-producto');
+const btnGuardarProducto = document.getElementById('btn-guardar-producto');
 
-// Inicialización de la app
+// Carga Inicial
 document.addEventListener('DOMContentLoaded', () => {
     renderConfig();
     renderProductos();
     setupEventListeners();
 });
 
-// Renderizar la configuración visual (Banner, Enlace oficial y Texto)
+// Renderizar configuración del encabezado/banner
 function renderConfig() {
     if (displayBannerImg) displayBannerImg.src = config.bannerUrl;
     if (displayOfficialLink) {
@@ -62,30 +57,40 @@ function renderConfig() {
     }
     if (displayVendorText) displayVendorText.textContent = config.vendorText;
 
-    // Cargar datos actuales en los campos del Modal
     if (inputBanner) inputBanner.value = config.bannerUrl;
     if (inputLink) inputLink.value = config.officialLink;
     if (inputText) inputText.value = config.vendorText;
 }
 
-// Renderizar las tarjetas de productos
+// Renderizar únicamente las publicaciones creadas
 function renderProductos() {
     if (!gridProductos) return;
     gridProductos.innerHTML = '';
+
+    if (productos.length === 0) {
+        gridProductos.innerHTML = `
+            <div class="sin-productos">
+                <i class="fas fa-box-open" style="font-size:32px; margin-bottom:10px; display:block; color:#aaa;"></i>
+                No hay publicaciones cargadas en el catálogo.
+            </div>
+        `;
+        return;
+    }
 
     productos.forEach(prod => {
         const card = document.createElement('div');
         card.className = 'card';
 
-        // Construcción del mensaje para WhatsApp con el número fijo
         const mensajeWA = encodeURIComponent(`Hola, quisiera más información sobre: ${prod.titulo}`);
         const urlWA = `https://wa.me/${TELEFONO_WHATSAPP}?text=${mensajeWA}`;
 
         card.innerHTML = `
-            <img src="${prod.imagen}" alt="${prod.titulo}">
+            <div class="card-img-wrapper">
+                <img src="${prod.imagen}" alt="${prod.titulo}" onerror="this.src='https://via.placeholder.com/300x240?text=Sin+Imagen'">
+            </div>
             <div class="admin-controls">
-                <i class="fas fa-link" title="Copiar enlace" onclick="copiarEnlace('${prod.id}')"></i>
-                <i class="fas fa-pencil-alt" title="Editar" onclick="editarProducto('${prod.id}')"></i>
+                <i class="fas fa-link" title="Copiar enlace / Compartir" onclick="compartirProducto('${prod.id}')"></i>
+                <i class="fas fa-pencil-alt" title="Editar" onclick="prepararEdicion('${prod.id}')"></i>
                 <i class="fas fa-trash" title="Eliminar" onclick="eliminarProducto('${prod.id}')"></i>
             </div>
             <div class="card-info">
@@ -99,15 +104,15 @@ function renderProductos() {
     });
 }
 
-// Guardar los datos en LocalStorage
+// Guardar en LocalStorage
 function guardarDatos() {
     localStorage.setItem('vivirbien_config', JSON.stringify(config));
     localStorage.setItem('vivirbien_productos', JSON.stringify(productos));
 }
 
-// Event Listeners principales
+// Event Listeners
 function setupEventListeners() {
-    // Botón de Admin
+    // Activar/Desactivar Admin
     if (btnLoginAdmin) {
         btnLoginAdmin.addEventListener('click', () => {
             isAdmin = !isAdmin;
@@ -116,6 +121,7 @@ function setupEventListeners() {
             if (isAdmin) {
                 btnLoginAdmin.textContent = 'Salir Admin';
                 abrirModalAdmin();
+                abrirPanelNuevoProducto();
             } else {
                 btnLoginAdmin.textContent = 'admin';
                 cerrarModalAdmin();
@@ -124,7 +130,7 @@ function setupEventListeners() {
         });
     }
 
-    // Modal de Configuración
+    // Modal Admin Configuración
     if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalAdmin);
 
     if (btnGuardarConfig) {
@@ -139,34 +145,160 @@ function setupEventListeners() {
         });
     }
 
-    // Panel Lateral para Agregar Producto
+    // Panel Lateral
     if (btnCerrarPanel) btnCerrarPanel.addEventListener('click', cerrarPanelProducto);
 
-    if (btnAgregarProducto) {
-        btnAgregarProducto.addEventListener('click', () => {
+    // Selección de archivo desde PC o Móvil
+    if (btnTriggerFile) {
+        btnTriggerFile.addEventListener('click', () => inputFotoFile.click());
+    }
+
+    if (inputFotoFile) {
+        inputFotoFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    imagenTemporal = event.target.result;
+                    mostrarVistaPrevia(imagenTemporal);
+                    if (nuevoImagenUrl) nuevoImagenUrl.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Pegar URL directa de foto
+    if (nuevoImagenUrl) {
+        nuevoImagenUrl.addEventListener('input', () => {
+            const url = nuevoImagenUrl.value.trim();
+            if (url) {
+                imagenTemporal = url;
+                mostrarVistaPrevia(url);
+            } else if (!inputFotoFile.files.length) {
+                ocultarVistaPrevia();
+            }
+        });
+    }
+
+    // Publicar o Guardar Cambios del Producto
+    if (btnGuardarProducto) {
+        btnGuardarProducto.addEventListener('click', () => {
             const titulo = nuevoTitulo.value.trim();
-            if (!titulo) {
-                alert('Por favor, ingresa un título para la publicación.');
+            const urlManual = nuevoImagenUrl ? nuevoImagenUrl.value.trim() : '';
+            const imagenFinal = imagenTemporal || urlManual;
+
+            if (!imagenFinal) {
+                alert('Por favor, selecciona una foto de tu dispositivo o pega un enlace de imagen.');
                 return;
             }
 
-            const nuevoProd = {
-                id: Date.now().toString(),
-                titulo: titulo,
-                imagen: 'https://via.placeholder.com/300x240?text=' + encodeURIComponent(titulo)
-            };
+            if (!titulo) {
+                alert('Por favor, escribe un título para la publicación.');
+                return;
+            }
 
-            productos.push(nuevoProd);
+            if (editandoId) {
+                // Editar existente
+                const idx = productos.findIndex(p => p.id === editandoId);
+                if (idx !== -1) {
+                    productos[idx].titulo = titulo;
+                    productos[idx].imagen = imagenFinal;
+                }
+            } else {
+                // Crear nueva publicación
+                const nuevoProd = {
+                    id: Date.now().toString(),
+                    titulo: titulo,
+                    imagen: imagenFinal
+                };
+                productos.push(nuevoProd);
+            }
+
             guardarDatos();
             renderProductos();
-
-            nuevoTitulo.value = '';
             cerrarPanelProducto();
         });
     }
 }
 
-// Funciones para abrir y cerrar paneles/modales
+// Vista previa
+function mostrarVistaPrevia(src) {
+    if (previewImg && previewContainer) {
+        previewImg.src = src;
+        previewContainer.style.display = 'block';
+    }
+}
+
+function ocultarVistaPrevia() {
+    if (previewImg && previewContainer) {
+        previewImg.src = '';
+        previewContainer.style.display = 'none';
+    }
+    imagenTemporal = "";
+}
+
+// Preparar panel para una nueva publicación
+function abrirPanelNuevoProducto() {
+    editandoId = null;
+    if (tituloPanelProducto) tituloPanelProducto.textContent = "Nueva Publicación";
+    if (btnGuardarProducto) btnGuardarProducto.textContent = "Publicar Producto";
+    if (nuevoTitulo) nuevoTitulo.value = "";
+    if (nuevoImagenUrl) nuevoImagenUrl.value = "";
+    if (inputFotoFile) inputFotoFile.value = "";
+    ocultarVistaPrevia();
+    if (panelProducto) panelProducto.classList.add('open');
+}
+
+// Preparar edición de un producto
+window.prepararEdicion = function(id) {
+    const prod = productos.find(p => p.id === id);
+    if (!prod) return;
+
+    editandoId = id;
+    if (tituloPanelProducto) tituloPanelProducto.textContent = "Editar Publicación";
+    if (btnGuardarProducto) btnGuardarProducto.textContent = "Guardar Cambios";
+    if (nuevoTitulo) nuevoTitulo.value = prod.titulo;
+    if (nuevoImagenUrl) nuevoImagenUrl.value = prod.imagen.startsWith('data:') ? '' : prod.imagen;
+    
+    imagenTemporal = prod.imagen;
+    mostrarVistaPrevia(prod.imagen);
+
+    if (panelProducto) panelProducto.classList.add('open');
+};
+
+// Eliminar producto
+window.eliminarProducto = function(id) {
+    if (confirm('¿Estás seguro de que deseas eliminar esta publicación?')) {
+        productos = productos.filter(p => p.id !== id);
+        guardarDatos();
+        renderProductos();
+    }
+};
+
+// Compartir (Solo disponible si es admin)
+window.compartirProducto = function(id) {
+    const prod = productos.find(p => p.id === id);
+    if (!prod) return;
+
+    const textoCompartir = `Miren esta publicación de Vivir Bien: *${prod.titulo}*`;
+    const urlPublicacion = window.location.href.split('#')[0] + '#' + id;
+
+    if (navigator.share) {
+        navigator.share({
+            title: prod.titulo,
+            text: textoCompartir,
+            url: urlPublicacion
+        }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(`${textoCompartir}\n${urlPublicacion}`).then(() => {
+            alert('¡Enlace e información copiada al portapapeles!');
+        }).catch(() => {
+            alert(`Publicación: ${prod.titulo}\nEnlace: ${urlPublicacion}`);
+        });
+    }
+};
+
 function abrirModalAdmin() {
     if (modalAdmin) modalAdmin.style.display = 'flex';
 }
@@ -177,35 +309,6 @@ function cerrarModalAdmin() {
 
 function cerrarPanelProducto() {
     if (panelProducto) panelProducto.classList.remove('open');
+    ocultarVistaPrevia();
+    editandoId = null;
 }
-
-// Funciones globales invocadas desde las tarjetas
-window.eliminarProducto = function(id) {
-    if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
-        productos = productos.filter(p => p.id !== id);
-        guardarDatos();
-        renderProductos();
-    }
-};
-
-window.editarProducto = function(id) {
-    const prod = productos.find(p => p.id === id);
-    if (!prod) return;
-
-    const nuevoNombre = prompt('Editar título del producto:', prod.titulo);
-    if (nuevoNombre !== null && nuevoNombre.trim() !== '') {
-        prod.titulo = nuevoNombre.trim();
-        guardarDatos();
-        renderProductos();
-    }
-};
-
-window.copiarEnlace = function(id) {
-    const prod = productos.find(p => p.id === id);
-    if (prod) {
-        const url = window.location.href.split('#')[0] + '#' + id;
-        navigator.clipboard.writeText(url).then(() => {
-            alert('Enlace copiado al portapapeles');
-        });
-    }
-};
