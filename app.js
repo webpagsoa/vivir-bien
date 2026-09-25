@@ -1,8 +1,10 @@
-// Constante fija del teléfono (no editable desde la interfaz)
+// Contraseña para ingresar como Administrador
+const CLAVE_ADMIN = "1234";
+
+// Constante fija del teléfono
 const TELEFONO_WHATSAPP = "5493725449776";
 
 // Configuración fija del sitio
-const BANNER_URL_FIJA = "banner.jpg";
 const LINK_OFICIAL_FIJO = "https://www.livegood.com/internationalWellnessPack";
 const DEFAULT_VENDOR_TEXT = "ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial.";
 
@@ -23,7 +25,6 @@ const btnGuardarConfig = document.getElementById('btn-guardar-config');
 const inputText = document.getElementById('input-text');
 
 // Elementos del DOM - Vista Principal
-const displayBannerImg = document.getElementById('display-banner-img');
 const displayOfficialLink = document.getElementById('display-official-link');
 const displayVendorText = document.getElementById('display-vendor-text');
 const gridProductos = document.getElementById('grid-productos');
@@ -50,17 +51,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Renderizar la vista pública
 function renderConfig() {
-    if (displayBannerImg) displayBannerImg.src = BANNER_URL_FIJA;
     if (displayOfficialLink) {
         displayOfficialLink.href = LINK_OFICIAL_FIJO;
         displayOfficialLink.textContent = LINK_OFICIAL_FIJO;
     }
     if (displayVendorText) displayVendorText.textContent = vendorText;
-
     if (inputText) inputText.value = vendorText;
 }
 
-// Renderizar únicamente productos existentes
+// Renderizar publicaciones creadas
 function renderProductos() {
     if (!gridProductos) return;
     gridProductos.innerHTML = '';
@@ -109,17 +108,23 @@ function guardarDatos() {
 
 // Event Listeners principales
 function setupEventListeners() {
-    // Alternar modo Admin
+    // Solicitar contraseña al presionar "admin"
     if (btnLoginAdmin) {
         btnLoginAdmin.addEventListener('click', () => {
-            isAdmin = !isAdmin;
-            document.body.classList.toggle('admin-mode-active', isAdmin);
-
-            if (isAdmin) {
-                btnLoginAdmin.textContent = 'Salir Admin';
-                abrirModalAdmin();
-                abrirPanelNuevoProducto();
+            if (!isAdmin) {
+                const passIngresada = prompt("Ingresa la contraseña de administrador:");
+                if (passIngresada === CLAVE_ADMIN) {
+                    isAdmin = true;
+                    document.body.classList.add('admin-mode-active');
+                    btnLoginAdmin.textContent = 'Salir Admin';
+                    abrirModalAdmin();
+                    abrirPanelNuevoProducto();
+                } else if (passIngresada !== null) {
+                    alert("Contraseña incorrecta.");
+                }
             } else {
+                isAdmin = false;
+                document.body.classList.remove('admin-mode-active');
                 btnLoginAdmin.textContent = 'admin';
                 cerrarModalAdmin();
                 cerrarPanelProducto();
@@ -130,7 +135,7 @@ function setupEventListeners() {
     // Modal Admin
     if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalAdmin);
 
-    // Guardar Configuración General (Solo el texto editable)
+    // Guardar Configuración General (Texto editable)
     if (btnGuardarConfig) {
         btnGuardarConfig.addEventListener('click', () => {
             vendorText = inputText.value.trim() || DEFAULT_VENDOR_TEXT;
@@ -143,7 +148,7 @@ function setupEventListeners() {
     // Panel Lateral de Producto
     if (btnCerrarPanel) btnCerrarPanel.addEventListener('click', cerrarPanelProducto);
 
-    // Selección de archivo para Producto desde el dispositivo
+    // Selección de archivo desde dispositivo
     if (btnTriggerProductoFile) {
         btnTriggerProductoFile.addEventListener('click', () => inputProductoFile.click());
     }
