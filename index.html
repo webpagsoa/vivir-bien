@@ -108,6 +108,17 @@
             gap: 24px;
         }
 
+        .sin-productos {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #777;
+            font-size: 16px;
+            padding: 40px 20px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px dashed #ccc;
+        }
+
         .card {
             background-color: #ffffff;
             border-radius: 10px;
@@ -115,6 +126,8 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.06);
             position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
         }
 
         .card:hover {
@@ -122,11 +135,18 @@
             box-shadow: 0 6px 14px rgba(0,0,0,0.1);
         }
 
-        .card img {
+        .card-img-wrapper {
             width: 100%;
             height: 240px;
-            object-fit: cover;
             background-color: #f0f0f0;
+            overflow: hidden;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .admin-controls {
@@ -139,6 +159,7 @@
             display: none;
             gap: 12px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            z-index: 10;
         }
 
         .admin-mode-active .admin-controls {
@@ -158,6 +179,10 @@
 
         .card-info {
             padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-grow: 1;
         }
 
         .card-title {
@@ -182,6 +207,7 @@
             gap: 8px;
             transition: background-color 0.2s;
             text-decoration: none;
+            font-size: 14px;
         }
 
         .btn-whatsapp:hover {
@@ -263,15 +289,16 @@
         /* PANEL LATERAL */
         .side-panel {
             position: fixed;
-            right: -360px;
+            right: -380px;
             top: 0;
-            width: 320px;
+            width: 340px;
             height: 100%;
             background: #ffffff;
             box-shadow: -4px 0 15px rgba(0,0,0,0.1);
             transition: right 0.3s ease;
             padding: 24px;
             z-index: 999;
+            overflow-y: auto;
         }
 
         .side-panel.open {
@@ -287,15 +314,52 @@
             color: #666;
         }
 
-        .btn-select-img {
+        .side-panel h2 {
+            margin-top: 0;
+            font-size: 20px;
+        }
+
+        .side-panel input[type="text"] {
             width: 100%;
             padding: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        .btn-select-img {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
             cursor: pointer;
             background-color: #f8f9fa;
-            border: 1px dashed #ccc;
+            border: 1px dashed #0056b3;
+            color: #0056b3;
             border-radius: 6px;
-            font-weight: 500;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-select-img:hover {
+            background-color: #e6f2ff;
+        }
+
+        .preview-container {
+            width: 100%;
+            max-height: 180px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            display: none;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .preview-container img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
         }
 
         .mt-10 {
@@ -313,7 +377,7 @@
 
     <!-- BANNER Y TEXTO PRINCIPAL -->
     <section class="hero-section">
-        <img src="https://via.placeholder.com/1000x250?text=Foto+editable+por+admin" alt="Banner Vivir Bien" id="display-banner-img">
+        <img src="https://via.placeholder.com/1000x250?text=Banner+Vivir+Bien" alt="Banner Vivir Bien" id="display-banner-img">
         <div class="hero-content">
             <a href="https://www.livegood.com/internationalWellnessPack" target="_blank" class="official-link" id="display-official-link">
                 https://www.livegood.com/internationalWellnessPack
@@ -332,13 +396,13 @@
             <h2>Panel Admin - Vivir Bien</h2>
             
             <label for="input-banner">URL Foto de Banner:</label>
-            <input type="text" id="input-banner" value="banner.jpg">
+            <input type="text" id="input-banner" placeholder="Pega la URL de la foto de banner">
             
             <label for="input-link">Link de Página Oficial LiveGood:</label>
-            <input type="text" id="input-link" value="https://www.livegood.com/internationalWellnessPack">
+            <input type="text" id="input-link" placeholder="Ej: https://www.livegood.com/...">
             
             <label for="input-text">Texto editable por vendedor:</label>
-            <textarea id="input-text" rows="3">ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA.</textarea>
+            <textarea id="input-text" rows="3" placeholder="Escribe la descripción o texto promocional"></textarea>
 
             <div class="admin-actions">
                 <button class="btn-cerrar" id="btn-cerrar-modal">Cerrar</button>
@@ -347,14 +411,23 @@
         </div>
     </div>
 
-    <!-- PANEL LATERAL: AGREGAR PRODUCTO -->
+    <!-- PANEL LATERAL: AGREGAR O EDITAR PRODUCTO -->
     <div class="side-panel" id="panel-producto">
         <button class="close-side-panel" id="btn-cerrar-panel">&times;</button>
-        <h2>Agregar Producto</h2>
+        <h2 id="titulo-panel-producto">Nueva Publicación</h2>
         <br>
-        <button class="btn-select-img">📸 Seleccionar foto</button>
+        <input type="file" id="input-foto-file" accept="image/*" style="display: none;">
+        <button type="button" class="btn-select-img" id="btn-trigger-file">📸 Cargar foto desde dispositivo</button>
+        
+        <input type="text" id="nuevo-imagen-url" placeholder="O pega la URL/enlace de la foto">
+        
+        <div class="preview-container" id="preview-container">
+            <img id="preview-img" src="" alt="Vista previa">
+        </div>
+
         <input type="text" id="nuevo-titulo" placeholder="Título de la publicación">
-        <button class="btn-whatsapp mt-10" id="btn-agregar-producto">Agregar Publicación</button>
+        
+        <button class="btn-whatsapp mt-10" id="btn-guardar-producto">Publicar Producto</button>
     </div>
 
     <!-- Script JavaScript -->
