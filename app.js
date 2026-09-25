@@ -1,149 +1,130 @@
-// REEMPLAZÁ CON TUS MISMAS CLAVES DE FIREBASE DE SIEMPRE
-const firebaseConfig = {
-    apiKey: "TU_API_KEY_AQUI",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROYECTO",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
-};
+let isAdmin = false;
+let whatsappGlobal = "5493725449776";
 
-// Inicializar Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
-
-// Datos por defecto
-let appData = {
-    bannerUrl: "banner.jpg",
-    officialUrl: "https://www.livegood.com/internationalWellnessPack#?enroller=Normaolgadu",
-    sellerText: "ADQUIRÍ ESTE PACK EN TODO EL MUNDO A PRECIO DE FÁBRICA. Carga de combos e información oficial.",
-    sellerPhone: "5493725449776",
-    adminPass: "1234"
-};
-
-// Productos de muestra iniciales
-const productos = [
-    {
-        id: "p1",
-        nombre: "International Pack By LiveGood",
-        imagen: "banner.jpg"
-    },
-    {
-        id: "p2",
-        nombre: "Super Redes y Verdes Orgánicos",
-        imagen: "banner.jpg"
-    }
+// Base de datos de publicaciones dinámicas
+let publicaciones = [
+    { id: 1, title: "International Pack By LiveGood", img: "https://via.placeholder.com/300x250?text=Pack+1" },
+    { id: 2, title: "Super Redes y Verdes Orgánicos", img: "https://via.placeholder.com/300x250?text=Pack+2" }
 ];
 
-// Cargar configuración de Firestore en tiempo real
-function escucharFirebase() {
-    db.collection("vivirbien").doc("configuracion").onSnapshot((doc) => {
-        if (doc.exists) {
-            appData = doc.data();
-            renderizar();
-        } else {
-            // Guardar configuración inicial si no existe
-            db.collection("vivirbien").doc("configuracion").set(appData);
-            renderizar();
-        }
-    });
-}
-
-function renderizar() {
-    document.getElementById('main-banner').src = appData.bannerUrl || 'banner.jpg';
-    document.getElementById('official-link-btn').href = appData.officialUrl || '#';
-    document.getElementById('seller-text-display').innerText = appData.sellerText || '';
-
-    renderizarCatalogo();
-}
-
-function renderizarCatalogo() {
+// 1. Renderizar tarjetas de publicaciones
+function renderizarProductos() {
     const grid = document.getElementById('grid-productos');
     grid.innerHTML = '';
 
-    productos.forEach(prod => {
-        const textWa = encodeURIComponent(`Hola! Quisiera consultar por el producto: ${prod.nombre}`);
-        const urlWaConsulta = `https://wa.me/${appData.sellerPhone}?text=${textWa}`;
+    publicaciones.forEach(pub => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <img src="${pub.img}" alt="${pub.title}">
+            
+            <!-- Controles visibles únicamente si isAdmin es true -->
+            <div class="admin-controls">
+                <i class="fas fa-link" title="Copiar Link / Compartir" onclick="accionAdmin('compartir', ${pub.id})"></i>
+                <i class="fas fa-pencil-alt" title="Editar" onclick="accionAdmin('editar', ${pub.id})"></i>
+                <i class="fas fa-trash" title="Borrar" onclick="accionAdmin('borrar', ${pub.id})"></i>
+            </div>
 
-        const div = document.createElement('div');
-        div.className = 'card-product';
-        div.innerHTML = `
-            <img src="${prod.imagen}" alt="${prod.nombre}" onerror="this.src='banner.jpg'">
-            <div class="card-title">${prod.nombre}</div>
-            <a href="${urlWaConsulta}" target="_blank" class="btn-wa-card">whatsapp consulta vendedor</a>
-            <button onclick="compartirFormatoPublicacion('${prod.nombre}')" class="btn-share-card">📲 Compartir Publicación</button>
+            <div class="card-info">
+                <p class="card-title">${pub.title}</p>
+                <button class="btn-whatsapp" onclick="abrirWhatsApp('${pub.title}')">
+                    <i class="fab fa-whatsapp"></i> whatsapp consulta vendedor
+                </button>
+            </div>
         `;
-        grid.appendChild(div);
+        grid.appendChild(card);
     });
 }
 
-// FORMATO EXACTO DE PUBLICACIÓN (Boceto 2 de Paint: producto, link oficial, url vivir bien, whatsapp)
-function compartirFormatoPublicacion(nombreProducto) {
-    const urlVivirBien = window.location.href;
-    const linkWaVendedor = `https://wa.me/${appData.sellerPhone}`;
-
-    // Estructura idéntica al dibujo de formato publicacion.jpg
-    const textoPublicacion = 
-`*${nombreProducto}*
-
-*linck de pagina oficial:*
-${appData.officialUrl}
-
-*url de la pagina vivir bien:*
-${urlVivirBien}
-
-*whatsapp vendedor:*
-${linkWaVendedor}`;
-
-    if (navigator.share) {
-        navigator.share({
-            title: nombreProducto,
-            text: textoPublicacion
-        }).catch(() => {});
+// 2. Conmutar Modo Admin
+document.getElementById('btn-login-admin').addEventListener('click', () => {
+    isAdmin = !isAdmin;
+    const body = document.getElementById('app-body');
+    
+    if (isAdmin) {
+        body.classList.add('admin-mode-active');
+        document.getElementById('btn-login-admin').innerText = "Salir Admin";
+        document.getElementById('modal-admin').style.display = 'flex';
+        document.getElementById('panel-producto').classList.add('open');
     } else {
-        navigator.clipboard.writeText(textoPublicacion);
-        alert('¡Publicación copiada al portapapeles! Ya podés pegarla en WhatsApp o Redes.');
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoPublicacion)}`, '_blank');
+        body.classList.remove('admin-mode-active');
+        document.getElementById('btn-login-admin').innerText = "admin";
+        document.getElementById('panel-producto').classList.remove('open');
+        document.getElementById('modal-admin').style.display = 'none';
+    }
+});
+
+// 3. Control de Modales y Configuración
+document.getElementById('btn-cerrar-modal').addEventListener('click', () => {
+    document.getElementById('modal-admin').style.display = 'none';
+});
+
+document.getElementById('btn-cerrar-panel').addEventListener('click', () => {
+    document.getElementById('panel-producto').classList.remove('open');
+});
+
+document.getElementById('btn-guardar-config').addEventListener('click', () => {
+    const linkInput = document.getElementById('input-link').value;
+    const linkDisplay = document.getElementById('display-official-link');
+    
+    linkDisplay.innerText = linkInput;
+    linkDisplay.href = linkInput;
+    
+    document.getElementById('display-vendor-text').innerText = document.getElementById('input-text').value;
+    whatsappGlobal = document.getElementById('input-wa').value;
+    
+    document.getElementById('modal-admin').style.display = 'none';
+    alert("Configuración guardada correctamente");
+});
+
+// 4. Operaciones de Productos (Agregar, Editar, Borrar, Compartir)
+document.getElementById('btn-agregar-producto').addEventListener('click', () => {
+    const inputTitulo = document.getElementById('nuevo-titulo');
+    const titulo = inputTitulo.value.trim();
+    
+    if (titulo) {
+        publicaciones.push({
+            id: Date.now(),
+            title: titulo,
+            img: "https://via.placeholder.com/300x250?text=Nuevo+Producto"
+        });
+        renderizarProductos();
+        inputTitulo.value = '';
+        alert("Publicación agregada correctamente");
+    } else {
+        alert("Por favor, ingresa un título para la publicación.");
+    }
+});
+
+function accionAdmin(accion, id) {
+    if (accion === 'borrar') {
+        if (confirm("¿Seguro que quieres borrar esta publicación?")) {
+            publicaciones = publicaciones.filter(p => p.id !== id);
+            renderizarProductos();
+        }
+    } else if (accion === 'editar') {
+        const pub = publicaciones.find(p => p.id === id);
+        if (pub) {
+            const nuevoTitulo = prompt("Editar título de la publicación:", pub.title);
+            if (nuevoTitulo !== null && nuevoTitulo.trim() !== "") {
+                pub.title = nuevoTitulo.trim();
+                renderizarProductos();
+            }
+        }
+    } else if (accion === 'compartir') {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Enlace de publicación copiado al portapapeles (ID: " + id + ")");
+        }).catch(() => {
+            alert("Enlace de publicación ID: " + id);
+        });
     }
 }
 
-// Panel Admin
-document.getElementById('btn-abrir-admin').addEventListener('click', () => {
-    const pass = prompt('Ingresá la contraseña de administrador:');
-    if (pass === appData.adminPass) {
-        document.getElementById('input-banner-url').value = appData.bannerUrl;
-        document.getElementById('input-official-url').value = appData.officialUrl;
-        document.getElementById('input-seller-text').value = appData.sellerText;
-        document.getElementById('input-seller-phone').value = appData.sellerPhone;
-        document.getElementById('modal-admin').classList.remove('hidden');
-    } else if (pass !== null) {
-        alert('Contraseña incorrecta.');
-    }
-});
+function abrirWhatsApp(producto) {
+    const msj = encodeURIComponent("Hola, quiero consultar sobre: " + producto);
+    window.open(`https://wa.me/${whatsappGlobal}?text=${msj}`, '_blank');
+}
 
-document.getElementById('btn-cerrar-admin').addEventListener('click', () => {
-    document.getElementById('modal-admin').classList.add('hidden');
-});
-
-document.getElementById('btn-guardar-admin').addEventListener('click', () => {
-    const nuevosDatos = {
-        bannerUrl: document.getElementById('input-banner-url').value,
-        officialUrl: document.getElementById('input-official-url').value,
-        sellerText: document.getElementById('input-seller-text').value,
-        sellerPhone: document.getElementById('input-seller-phone').value,
-        adminPass: document.getElementById('input-admin-pass').value || appData.adminPass
-    };
-
-    db.collection("vivirbien").doc("configuracion").set(nuevosDatos)
-        .then(() => {
-            alert('¡Guardado exitosamente en Firebase!');
-            document.getElementById('modal-admin').classList.add('hidden');
-        })
-        .catch(err => {
-            alert('Error al guardar: ' + err.message);
-        });
-});
-
-window.onload = escucharFirebase;
+// Inicializar renderizado al cargar
+renderizarProductos();
